@@ -1,0 +1,59 @@
+ cliente_id | pedidos | ticket_medio 
+------------+---------+--------------
+ C00595     |       1 |      1742.35
+ C00155     |       1 |      1564.25
+ C00650     |       1 |      1331.32
+ C00758     |       1 |      1218.18
+ C00152     |       1 |      1147.93
+ C00733     |       1 |      1081.32
+ C00723     |       1 |      1079.61
+ C00702     |       1 |      1076.58
+ C00395     |       1 |      1029.94
+ C00674     |       1 |       992.00
+(10 rows)
+
+  categoria  | subcategoria | total_vendas 
+-------------+--------------+--------------
+ Eletrônicos | Fones        |     46481.14
+ Moda        | Masculino    |     41006.58
+ Casa        | Cozinha      |     39699.18
+ Moda        | Feminino     |     39135.85
+ Eletrônicos | Smart Home   |     34045.92
+ Casa        | Decoração    |     27403.78
+ Esporte     | Outdoor      |     26632.75
+ Esporte     | Bike         |     23417.87
+ Beleza      | Perfumaria   |     22594.52
+ Casa        | Organização  |     21894.86
+ Moda        | Acessórios   |     19733.09
+ Beleza      | Cabelos      |     16427.58
+ Beleza      | Skincare     |     14395.11
+ Eletrônicos | Acessórios   |     14189.80
+ Esporte     | Fitness      |     12175.56
+(15 rows)
+
+       produto        | total_quantidade_vendida 
+----------------------+--------------------------
+ Cabo USB-C Pro       |                      137
+ Fone Bluetooth Pulse |                      122
+ Tênis Street         |                      122
+(3 rows)
+
+ canal_venda | pedidos | faturamento | ticket_medio | margem_pct 
+-------------+---------+-------------+--------------+------------
+ App         |     391 |   126496.90 |       323.52 |       44.5
+ Site        |     413 |   125546.53 |       303.99 |       47.1
+ Marketplace |     337 |    96522.89 |       286.42 |       41.5
+ Loja Física |     174 |    49756.36 |       285.96 |       46.7
+(4 rows)
+
+    cupom    | itens | desconto_medio_pct | margem_pct 
+-------------+-------+--------------------+------------
+ Sem cupom   |   575 |                6.8 |       45.8
+ APP5        |   219 |                7.7 |       43.8
+ VIP15       |   208 |                8.0 |       44.0
+ BEMVINDO10  |   150 |                8.3 |       46.3
+ FRETEGRATIS |   146 |                8.3 |       44.4
+ RETORNO5    |   127 |                7.2 |       44.4
+ BF2024      |    28 |               14.6 |       37.4
+(7 rows)
+

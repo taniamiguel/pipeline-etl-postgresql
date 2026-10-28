@@ -1,0 +1,15 @@
+# Sobe um PostgreSQL que roda o pipeline inteiro (raw → stage → final) na primeira inicialização.
+# Uso: docker compose up -d
+services:
+  postgres:
+    image: postgres:17.5
+    container_name: pipeline-etl-postgres
+    environment:
+      POSTGRES_USER: analista
+      POSTGRES_PASSWORD: analista   # senha só para uso local
+      POSTGRES_DB: ecommerce
+    ports:
+      - "5435:5432"
+    volumes:
+      - ./data:/data:ro
+      - ./sql/pipeline:/docker-entrypoint-initdb.d:ro

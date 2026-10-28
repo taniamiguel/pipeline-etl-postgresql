@@ -1,0 +1,29 @@
+                 problema                 | antes | depois 
+------------------------------------------+-------+--------
+ Linhas                                   |  1722 |   1700
+ Linhas duplicadas (pedido + item)        |    22 |      0
+ Canal de venda fora do padrão            |     4 |      0
+ Categoria fora do padrão                 |     7 |      0
+ Categoria errada para o produto          |    12 |      0
+ Forma de pagamento fora do padrão        |     9 |      0
+ "Devolvido" fora do padrão (sim, nao, N) |     7 |      0
+ Estado vazio ou em minúsculas            |     5 |      0
+ Região vazia                             |     4 |      0
+ Produto sem nome                         |     5 |      0
+ Quantidade zero ou negativa              |     8 |      0
+ Preço ≤ 0 ou fora do padrão do produto   |     6 |      0
+ Custo ≤ 0 ou fora do padrão do produto   |     6 |      0
+ Frete negativo                           |     6 |      0
+(14 rows)
+
+         leitura         | minimo | mediana | maximo | entrega_antes_do_pedido 
+-------------------------+--------+---------+--------+-------------------------
+ DD/MM (leitura da v1)   |   -321 |       9 |    339 |                     270
+ MM/DD (leitura correta) |     -5 |       6 |     16 |                       3
+(2 rows)
+
+ status_contradiz_devolvido | sem_data_do_pedido | entregue_sem_data_de_entrega 
+----------------------------+--------------------+------------------------------
+                         15 |                 17 |                          906
+(1 row)
+
