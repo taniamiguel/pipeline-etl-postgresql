@@ -1,52 +1,53 @@
- faturamento |   custo   | lucro_liquido | margem_pct 
--------------+-----------+---------------+------------
-   398322.68 | 219553.33 |     178769.34 |       44.9
+ pedidos | receita_bruta | descontos | receita_liquida 
+---------+---------------+-----------+-----------------
+    1072 |     431872.66 |  32639.07 |       399233.59
 (1 row)
 
-  categoria  | faturamento |  lucro   | margem_pct 
--------------+-------------+----------+------------
- Moda        |    99875.52 | 53639.36 |       53.7
- Esporte     |    62226.18 | 31767.35 |       51.1
- Beleza      |    52756.93 | 26428.86 |       50.1
- Casa        |    88997.82 | 34096.43 |       38.3
- Eletrônicos |    94466.23 | 32837.34 |       34.8
-(5 rows)
+  categoria  | receita_liquida |   custo   | margem_bruta | margem_bruta_pct 
+-------------+-----------------+-----------+--------------+------------------
+ Moda        |        99875.52 |  46236.16 |     53639.36 |             53.7
+ Esporte     |        62226.18 |  30458.83 |     31767.35 |             51.1
+ Beleza      |        52756.93 |  26328.07 |     26428.86 |             50.1
+ Casa        |        88997.82 |  54901.38 |     34096.43 |             38.3
+ Eletrônicos |        94466.23 |  61628.89 |     32837.34 |             34.8
+ TOTAL       |       398322.68 | 219553.33 |    178769.34 |             44.9
+(6 rows)
 
- posicao |  categoria  |        produto        | faturamento | margem_pct 
----------+-------------+-----------------------+-------------+------------
-       1 | Eletrônicos | Cabo USB-C Pro        |     6026.08 |       66.9
-       2 | Beleza      | Body Splash Fresh     |     6116.81 |       66.5
-       3 | Beleza      | Máscara Reparadora    |     4044.23 |       64.3
-       4 | Esporte     | Luva Bike Pro         |     5342.14 |       64.3
-       5 | Esporte     | Kit Faixas Elásticas  |     4903.60 |       63.9
-      26 | Beleza      | Secador Compact       |    12383.35 |       38.5
-      27 | Eletrônicos | Fone Bluetooth Pulse  |    21060.86 |       32.9
-      28 | Eletrônicos | Assistente Smart Mini |    25389.89 |       31.1
-      29 | Casa        | Air Fryer 4L          |    29382.24 |       26.4
-      30 | Eletrônicos | Headset Gamer X       |    24972.83 |       24.9
+ posicao |  categoria  |        produto        | receita_liquida | margem_bruta | margem_bruta_pct 
+---------+-------------+-----------------------+-----------------+--------------+------------------
+       1 | Eletrônicos | Cabo USB-C Pro        |         6026.08 |      4030.86 |             66.9
+       2 | Beleza      | Body Splash Fresh     |         6116.81 |      4069.75 |             66.5
+       3 | Beleza      | Máscara Reparadora    |         4044.23 |      2602.20 |             64.3
+       4 | Esporte     | Luva Bike Pro         |         5342.14 |      3434.26 |             64.3
+       5 | Esporte     | Kit Faixas Elásticas  |         4903.60 |      3133.25 |             63.9
+      26 | Beleza      | Secador Compact       |        12383.35 |      4765.80 |             38.5
+      27 | Eletrônicos | Fone Bluetooth Pulse  |        21060.86 |      6921.11 |             32.9
+      28 | Eletrônicos | Assistente Smart Mini |        25389.89 |      7896.99 |             31.1
+      29 | Casa        | Air Fryer 4L          |        29382.24 |      7745.45 |             26.4
+      30 | Eletrônicos | Headset Gamer X       |        24972.83 |      6222.69 |             24.9
 (10 rows)
 
   categoria  | itens | devolvidos | taxa_devolucao_pct 
 -------------+-------+------------+--------------------
- Beleza      |   259 |         23 |                8.9
+ Moda        |   363 |         44 |               12.1
  Casa        |   310 |         30 |                9.7
+ Beleza      |   259 |         23 |                8.9
  Eletrônicos |   412 |         33 |                8.0
  Esporte     |   279 |         16 |                5.7
- Moda        |   363 |         44 |               12.1
-             |  1623 |        146 |                9.0
+ TOTAL       |  1623 |        146 |                9.0
 (6 rows)
 
- pedidos_com_data | atraso_medio_dias | atraso_medio_dos_atrasados | pct_atrasados | nota_no_prazo | nota_com_atraso 
-------------------+-------------------+----------------------------+---------------+---------------+-----------------
-              563 |               0.4 |                        1.6 |          36.4 |          4.32 |            3.89
+ pedidos_com_data | atraso_medio_dias | pct_adiantados | pct_no_dia | pct_atrasados | atraso_medio_dos_atrasados | nota_no_prazo | nota_com_atraso 
+------------------+-------------------+----------------+------------+---------------+----------------------------+---------------+-----------------
+              563 |              0.36 |           24.3 |       39.3 |          36.4 |                        1.6 |          4.32 |            3.89
 (1 row)
 
- segmento_cliente | clientes | ticket_medio | pedidos_por_cliente 
-------------------+----------+--------------+---------------------
- Não informado    |        3 |       284.65 |                1.00
- Novo             |      438 |       267.52 |                1.36
- Recorrente       |      472 |       270.86 |                1.44
- VIP              |      167 |       307.15 |                1.08
-                  |     1080 |       274.01 |                1.35
+ segmento_cliente | clientes | pedidos | ticket_medio_por_cliente | ticket_medio_por_pedido 
+------------------+----------+---------+--------------------------+-------------------------
+ Recorrente       |      472 |     592 |                   390.23 |                  311.13
+ Novo             |      438 |     508 |                   362.80 |                  312.81
+ VIP              |      167 |     171 |                   331.06 |                  323.32
+ Não informado    |        3 |       3 |                   284.65 |                  284.65
+ TOTAL            |      733 |    1072 |                   544.66 |                  372.42
 (5 rows)
 

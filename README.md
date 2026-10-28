@@ -1,43 +1,58 @@
-# 🧹 Pipeline ETL em PostgreSQL: limpeza e indicadores de e-commerce
+# 🧹 Pipeline de dados de e-commerce: PostgreSQL → Python → Power BI
 
-Pipeline em SQL que transforma uma base de vendas **suja** em uma tabela confiável para análise, em três camadas (**raw → stage → final**), e calcula 5 indicadores de negócio: lucro, margem, taxa de devolução, atraso na entrega e ticket médio.
+Projeto completo de análise de vendas: uma base **suja** é limpa em SQL em três camadas (**raw → stage → final**), e a tabela tratada alimenta os **5 indicadores do negócio** em Python e no Power BI:
 
-O projeto começou no curso **"Análise de Dados com IA: SQL, Python e Power BI" (Alura)**, em que parte do SQL foi gerada com a ajuda do Copilot. Depois revisei o resultado com calma e encontrei **erros que mudavam as conclusões**. Esta é a versão revisada.
+1. Receita líquida
+2. Margem bruta por produto e categoria
+3. Taxa de devolução
+4. Atraso médio na entrega
+5. Ticket médio por cliente
+
+O projeto começou no curso **"Análise de Dados com IA: SQL, Python e Power BI" (Alura)**, em que parte do código foi gerada com a ajuda do Copilot. Depois revisei os resultados e encontrei **erros nos dados e nas fórmulas que mudavam as conclusões**. Esta é a versão revisada.
 
 ## 📌 O que a revisão encontrou
 
-1. **A data de entrega estava com dia e mês invertidos.** Lida como DD/MM (como na versão original), a entrega aparecia de 321 dias *antes* a 339 dias *depois* do pedido. Lida como MM/DD, fica entre −5 e +16 dias, coerente com o prazo prometido de 2 a 15 dias. Com a leitura errada, o **atraso médio era de 7,8 dias**. O valor real é **0,4 dia**.
-2. **Custos com valor de preenchimento (R$ 7.999,90) e preços absurdos (R$ 9.999,99 e R$ 0,01)** derrubavam a margem. Eletrônicos aparecia com **9,8%** de margem, quando o valor real é **34,8%**.
-3. **A mesma categoria escrita de jeitos diferentes** ("Beleza", "beleza ", "Esporte", "Esportes") dividia os totais em 9 categorias em vez de 5.
+1. **A data de entrega estava com dia e mês invertidos.** Lida como DD/MM (como no curso), a entrega aparecia de 321 dias *antes* a 339 dias *depois* do pedido. Lida como MM/DD, fica entre 5 dias antes e 16 depois, coerente com o prazo prometido de 2 a 15 dias. Com a leitura errada, o painel do curso mostrava **115 dias** de atraso médio. O valor real é **0,36 dia**.
+2. **A receita somava pedidos cancelados e devolvidos**, além de 22 linhas duplicadas e um preço de R$ 9.999,99.
+3. **A margem bruta % misturava bases diferentes:** margem calculada sem desconto dividida por receita com desconto. O valor final ficou parecido com o real **por coincidência**: dois erros em sentidos opostos se anularam (ignorar o desconto aumenta a margem; custos de preenchimento de R$ 7.999,90 diminuem).
+4. **A mesma categoria estava escrita de jeitos diferentes** ("Beleza", "beleza ", "Esporte", "Esportes"), o que dividia os totais em 9 categorias em vez de 5.
 
-| Indicador | Versão original | Versão revisada |
+| Indicador | Painel do curso | Versão revisada |
 |---|---:|---:|
-| Lucro (pedidos entregues) | R$ 142.011 | **R$ 178.769** (+26%) |
-| Margem total | 35,0% | **44,9%** |
-| Margem de Eletrônicos | 9,8% | **34,8%** |
-| Atraso médio na entrega | 7,8 dias | **0,4 dia** |
-| Pedidos entregues com atraso | 51,4% | **36,4%** |
-| Categorias | 9 | **5** |
+| Receita líquida | R$ 482.802,80 | **R$ 399.233,59** |
+| Margem bruta % | 45,5% | **44,9%** |
+| Taxa de devolução | 8,6% | **9,0%** |
+| Atraso médio na entrega | 115 dias | **0,36 dia** |
+| Ticket médio por cliente | R$ 625,39 | **R$ 544,66** |
+
+*Valores do painel do curso calculados com as medidas DAX originais sobre a tabela final da primeira versão. A mesma receita (R$ 482.802,80) aparece no notebook Python do curso.*
 
 A IA gerou o código em segundos, mas foi a validação dos resultados que mostrou que eles estavam errados.
 
-## ⚙️ Como funciona o pipeline
+## ⚙️ Arquitetura
 
 ```mermaid
 flowchart LR
     A[dados-ecommerce.csv] -->|COPY| B[(raw_pedidos<br/>tudo como texto)]
     B -->|tipagem e<br/>padronização| C[(stage_pedidos)]
     C -->|deduplicação, validação<br/>e colunas calculadas| D[(final_pedidos)]
-    D --> E[Indicadores]
+    D --> E[SQL<br/>indicadores]
+    D --> F[Python<br/>notebook e gráficos]
+    D --> G[Power BI<br/>painel]
 ```
 
-| Camada | Arquivo | O que faz |
+Toda a limpeza acontece **uma única vez, no SQL**. Python e Power BI só leem a tabela final, então os três chegam aos mesmos números. No curso, a limpeza era refeita em cada ferramenta, cada uma com regras um pouco diferentes.
+
+| Etapa | Onde | O que faz |
 |---|---|---|
 | **raw** | [`01_raw.sql`](sql/pipeline/01_raw.sql) | Carrega o CSV sem alterar nada. Tudo é `TEXT`, para nenhuma linha ser rejeitada |
 | **stage** | [`02_stage.sql`](sql/pipeline/02_stage.sql) | Converte datas e números (validando com regex antes), padroniza textos e completa estado e região vazios a partir da cidade |
-| **final** | [`03_final.sql`](sql/pipeline/03_final.sql) | Remove duplicatas, corrige a categoria pelo padrão de cada produto, anula valores impossíveis, marca problemas em colunas `flag_` e calcula faturamento, lucro e atraso |
+| **final** | [`03_final.sql`](sql/pipeline/03_final.sql) | Remove duplicatas, corrige a categoria pelo padrão de cada produto, anula valores impossíveis, marca problemas em colunas `flag_` e calcula receita, custo, margem e atraso |
+| **SQL** | [`05_indicadores.sql`](sql/analises/05_indicadores.sql) | Os 5 indicadores em SQL |
+| **Python** | [`indicadores.ipynb`](python/indicadores.ipynb) | Lê do PostgreSQL com SQLAlchemy, recalcula os indicadores e gera os gráficos |
+| **Power BI** | [`medidas.dax`](powerbi/medidas.dax) | Medidas DAX originais e corrigidas, com o motivo de cada correção |
 
-**Decisão importante:** nenhuma linha é apagada por ter um campo ruim. Um custo inválido vira `NULL`, mas o faturamento, o frete e a devolução daquela linha continuam valendo. Cada problema fica registrado numa coluna `flag_`, então dá para auditar o que foi corrigido.
+**Decisão importante:** nenhuma linha é apagada por ter um campo ruim. Um custo inválido vira `NULL`, mas a receita, o frete e a devolução daquela linha continuam valendo. Cada problema fica registrado numa coluna `flag_`, então dá para auditar o que foi corrigido.
 
 ## 🧹 Problemas tratados
 
@@ -69,65 +84,50 @@ Resultado de [`04_qualidade_dos_dados.sql`](sql/analises/04_qualidade_dos_dados.
 
 ## 📊 Indicadores
 
-Resultados de [`05_indicadores.sql`](sql/analises/05_indicadores.sql). Faturamento = quantidade × preço × (1 − desconto). Lucro = faturamento − quantidade × custo. Os valores consideram pedidos com status "Entregue".
+Receita líquida = quantidade × preço × (1 − desconto). Margem bruta = receita líquida − custo. Receita, margem e ticket consideram só pedidos **entregues**: pedido cancelado ou devolvido não gera receita.
 
-### 1. Lucro
-| Faturamento | Custo | Lucro | Margem |
-|---:|---:|---:|---:|
-| R$ 398.323 | R$ 219.553 | **R$ 178.769** | **44,9%** |
+### 1. Receita líquida
+![Receita líquida](imagens/1_receita_liquida.png)
 
-### 2. Margem por categoria
-| Categoria | Faturamento | Lucro | Margem |
-|---|---:|---:|---:|
-| Moda | R$ 99.876 | R$ 53.639 | **53,7%** |
-| Esporte | R$ 62.226 | R$ 31.767 | 51,1% |
-| Beleza | R$ 52.757 | R$ 26.429 | 50,1% |
-| Casa | R$ 88.998 | R$ 34.096 | 38,3% |
-| Eletrônicos | R$ 94.466 | R$ 32.837 | **34,8%** |
+Dos R$ 431.873 vendidos a preço cheio em 1.072 pedidos entregues, R$ 32.639 (7,6%) foram concedidos em desconto.
 
-Eletrônicos é a 2ª categoria em faturamento, mas tem a menor margem. Os produtos de menor margem são Headset Gamer X (24,9%) e Air Fryer 4L (26,4%). Os de maior margem são Cabo USB-C Pro (66,9%) e Body Splash Fresh (66,5%).
+### 2. Margem bruta
+![Margem bruta por categoria](imagens/2_margem_por_categoria.png)
+
+A margem bruta total é de **R$ 178.769 (44,9%)**. Eletrônicos é a 2ª categoria em receita, mas tem a menor margem. Os produtos de menor margem são Headset Gamer X (24,9%) e Air Fryer 4L (26,4%). Os de maior margem são Cabo USB-C Pro (66,9%) e Body Splash Fresh (66,5%).
 
 ### 3. Taxa de devolução
-| Categoria | Itens | Devolvidos | Taxa |
-|---|---:|---:|---:|
-| **Moda** | 363 | 44 | **12,1%** |
-| Casa | 310 | 30 | 9,7% |
-| Beleza | 259 | 23 | 8,9% |
-| Eletrônicos | 412 | 33 | 8,0% |
-| Esporte | 279 | 16 | 5,7% |
-| **Total** | 1.623 | 146 | **9,0%** |
+![Taxa de devolução por categoria](imagens/3_taxa_de_devolucao.png)
 
-Moda tem a maior margem e também a maior taxa de devolução.
+Moda tem a maior margem e também a maior taxa de devolução: **12,1%**, contra 9,0% no geral.
 
 ### 4. Atraso na entrega
-Calculado com os **563 pedidos entregues** que têm data prometida e data de entrega.
+![Atraso na entrega](imagens/4_atraso_na_entrega.png)
 
-| Atraso médio | Pedidos atrasados | Atraso médio dos atrasados | Nota no prazo | Nota com atraso |
-|---:|---:|---:|---:|---:|
-| 0,4 dia | 36,4% | 1,6 dia | **4,32** | **3,89** |
-
-Os atrasos são curtos (1,6 dia em média), mas já reduzem a avaliação do cliente em quase meio ponto.
+Com os **563 pedidos entregues** que têm as duas datas: 24% chegaram adiantados, 39% no dia e 36% atrasados, quase todos de 1 a 3 dias. Mesmo atrasos curtos pesam na satisfação: a nota média cai de **4,32** para **3,89**.
 
 ### 5. Ticket médio por cliente
-| Segmento | Clientes | Ticket médio | Pedidos por cliente |
-|---|---:|---:|---:|
-| VIP | 167 | **R$ 307,15** | 1,08 |
-| Recorrente | 472 | R$ 270,86 | 1,44 |
-| Novo | 438 | R$ 267,52 | 1,36 |
-| **Geral** | 1.080 | **R$ 274,01** | 1,35 |
+![Ticket médio](imagens/5_ticket_medio.png)
 
-Clientes VIP gastam mais por pedido, mas compram com **menos frequência** que os recorrentes.
+O ticket médio é de **R$ 544,66 por cliente** (733 clientes) e de **R$ 372,42 por pedido**. O segmento do cliente é registrado em cada pedido (o mesmo cliente aparece como "Novo" e depois como "Recorrente"), por isso a comparação entre segmentos usa o ticket por pedido. Os pedidos VIP são os de maior valor, mas a diferença é pequena.
 
 Análises complementares (vendas por subcategoria, produtos mais vendidos, canais de venda e efeito dos cupons) estão em [`06_analises_complementares.sql`](sql/analises/06_analises_complementares.sql), com os resultados na pasta [`resultados/`](resultados).
 
-## 🛠️ Técnicas de SQL usadas
+## 🛠️ Técnicas usadas
 
-- **Validação com regex** (`~`) antes de converter tipos com `to_date` e `CAST`
-- **Função própria** (`CREATE FUNCTION`) para comparar textos sem acento, espaço ou maiúsculas
-- **Funções de janela**: `ROW_NUMBER` para remover duplicatas, `MAX() OVER (PARTITION BY)` para preencher estado e região vazios, `RANK` para ranking
-- **Agregações estatísticas**: `mode()` e `percentile_cont` (mediana) para definir o padrão de cada produto
+**SQL (PostgreSQL)**
+- Validação com regex (`~`) antes de converter tipos com `to_date` e `CAST`
+- Função própria (`CREATE FUNCTION`) para comparar textos sem acento, espaço ou maiúsculas
+- Funções de janela: `ROW_NUMBER` para remover duplicatas, `MAX() OVER (PARTITION BY)` para preencher estado e região vazios, `RANK` para ranking
+- Agregações estatísticas: `mode()` e `percentile_cont` (mediana) para definir o padrão de cada produto
 - `CTE`, `CASE`, `COALESCE`, `NULLIF`, `FILTER`, `ROLLUP`, `LATERAL`
 - Modelagem em camadas (raw, stage e final) e flags de qualidade de dados
+
+**Python:** Pandas, SQLAlchemy e Matplotlib, com leitura direta do banco.
+
+**Power BI:** medidas DAX com `CALCULATE`, `DIVIDE` e `DISTINCTCOUNT`, e conexão com PostgreSQL.
+
+**Infraestrutura:** Docker Compose. Um comando sobe o banco já com o pipeline executado.
 
 ## ▶️ Como executar
 
@@ -137,13 +137,20 @@ Precisa do [Docker Desktop](https://www.docker.com/products/docker-desktop/).
 docker compose up -d
 ```
 
-Na primeira inicialização, o PostgreSQL carrega o CSV e roda as três camadas automaticamente. Para rodar as análises:
+Na primeira inicialização, o PostgreSQL carrega o CSV e roda as três camadas automaticamente.
 
+**SQL:**
 ```bash
 docker exec -i pipeline-etl-postgres psql -U analista -d ecommerce < sql/analises/05_indicadores.sql
 ```
 
-Para abrir no **pgAdmin** ou no DBeaver: host `localhost`, porta `5435`, banco `ecommerce`, usuário e senha `analista`.
+**Python:**
+```bash
+pip install -r python/requirements.txt
+jupyter notebook python/indicadores.ipynb
+```
+
+**Power BI e pgAdmin:** host `localhost`, porta `5435`, banco `ecommerce`, usuário e senha `analista`. O passo a passo para apontar o painel está em [`powerbi/README.md`](powerbi/README.md).
 
 Para reconstruir o banco do zero: `docker compose down -v` e depois `docker compose up -d`.
 
@@ -154,14 +161,19 @@ Para reconstruir o banco do zero: `docker compose down -v` e depois `docker comp
 ├── sql/
 │   ├── pipeline/                # 01_raw, 02_stage, 03_final (rodam no docker compose up)
 │   ├── analises/                # qualidade dos dados, 5 indicadores e análises extras
-│   └── v1_original/             # versão original feita no curso, para comparação
-├── resultados/                  # saída de cada análise
+│   └── v1_original/             # minha primeira versão, feita durante o curso
+├── python/indicadores.ipynb     # indicadores e gráficos em Python
+├── powerbi/medidas.dax          # medidas DAX originais e corrigidas
+├── imagens/                     # gráficos gerados pelo notebook
+├── resultados/                  # saída das consultas SQL
 └── docker-compose.yml
 ```
 
 ## 📝 Sobre os dados
 
-Base **fictícia** de 1.722 itens de pedidos (jan/2024 a mar/2025), fornecida no curso "Análise de Dados com IA: SQL, Python e Power BI" da Alura. Os erros fazem parte do exercício.
+Base **fictícia** de 1.722 itens de pedidos (jan/2024 a mar/2025), fornecida no curso "Análise de Dados com IA: SQL, Python e Power BI" da Alura. Os erros nos dados fazem parte do exercício.
+
+Na minha primeira versão da camada stage ([`v1_original`](sql/v1_original)), a regex das datas prometida e de entrega ficou sem o mês, por um erro de digitação meu. Por isso todas essas datas viravam `NULL`. A correção está em `02_stage.sql`.
 
 ---
 Desenvolvido por [Tania Miguel](https://github.com/taniamiguel) · [LinkedIn](https://www.linkedin.com/in/taniamiguel)

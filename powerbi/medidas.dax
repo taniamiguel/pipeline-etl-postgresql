@@ -1,0 +1,126 @@
+// =====================================================================
+// MEDIDAS DAX DO PAINEL DE E-COMMERCE
+// Tabela fVendas = ecommerce.final_pedidos (PostgreSQL, porta 5435)
+//
+// Para cada indicador: a medida ORIGINAL (feita no curso) e a CORRIGIDA,
+// com o motivo da correção. Use as corrigidas no painel.
+// =====================================================================
+
+
+// ---------------------------------------------------------------------
+// 1. RECEITA LÍQUIDA
+// ---------------------------------------------------------------------
+
+// ORIGINAL: somava todos os status, inclusive pedidos cancelados e devolvidos.
+// Receita Líquida =
+// SUMX(
+//     fVendas,
+//     fVendas[quantidade] * fVendas[preco_unitario] * (1 - fVendas[desconto_pct])
+// )
+
+// CORRIGIDA: só pedidos entregues geram receita.
+// A coluna faturamento já vem calculada da camada final do SQL.
+Receita Líquida =
+CALCULATE(
+    SUM(fVendas[faturamento]),
+    fVendas[status_pedido] = "Entregue"
+)
+
+
+// ---------------------------------------------------------------------
+// 2. MARGEM BRUTA
+// ---------------------------------------------------------------------
+
+// ORIGINAL: calculava a margem SEM desconto, mas a Margem % dividia pela receita COM desconto.
+// Numerador e denominador em bases diferentes deixavam a margem % maior do que é.
+// Margem Bruta =
+// SUMX(
+//     fVendas,
+//     (fVendas[preco_unitario] - fVendas[custo_unitario]) * fVendas[quantidade]
+// )
+// Margem Bruta % = DIVIDE([Margem Bruta], [Receita Líquida])
+
+// CORRIGIDA: margem = receita líquida − custo, nos mesmos pedidos.
+// Linhas sem custo válido (custo NULL na camada final) ficam fora das duas partes da conta.
+Margem Bruta =
+CALCULATE(
+    SUM(fVendas[lucro]),
+    fVendas[status_pedido] = "Entregue"
+)
+
+Margem Bruta % =
+DIVIDE(
+    [Margem Bruta],
+    CALCULATE(
+        SUM(fVendas[faturamento]),
+        fVendas[status_pedido] = "Entregue",
+        NOT ISBLANK(fVendas[lucro])
+    )
+)
+
+
+// ---------------------------------------------------------------------
+// 3. TAXA DE DEVOLUÇÃO
+// ---------------------------------------------------------------------
+
+// ORIGINAL: contava só o texto exato "Sim" (perdia "sim" e outras variações da tabela v1)
+// e incluía os pedidos cancelados no total.
+// Taxa de Devolução =
+// DIVIDE(
+//     CALCULATE(COUNTROWS(fVendas), fVendas[devolvido] = "Sim"),
+//     COUNTROWS(fVendas)
+// )
+
+// CORRIGIDA: a coluna devolvido já vem padronizada (Sim/Não) do SQL,
+// e pedidos cancelados saem do total porque nunca foram entregues.
+Taxa de Devolução =
+DIVIDE(
+    CALCULATE(COUNTROWS(fVendas), fVendas[devolvido] = "Sim", fVendas[status_pedido] <> "Cancelado"),
+    CALCULATE(COUNTROWS(fVendas), fVendas[status_pedido] <> "Cancelado")
+)
+
+
+// ---------------------------------------------------------------------
+// 4. ATRASO MÉDIO DE ENTREGA
+// ---------------------------------------------------------------------
+
+// ORIGINAL: o filtro data_entrega >= data_prometida tirava da média as entregas adiantadas,
+// o que só deixava os atrasos e jogava a média para cima. Somado à data de entrega
+// lida com dia e mês invertidos, o painel mostrava 115 dias de atraso médio.
+// Atraso Médio de Entrega =
+// AVERAGEX(
+//     FILTER(
+//         fVendas,
+//         NOT ISBLANK(fVendas[data_entrega]) &&
+//         NOT ISBLANK(fVendas[data_prometida]) &&
+//         fVendas[data_entrega] >= fVendas[data_prometida]
+//     ),
+//     DATEDIFF(fVendas[data_prometida], fVendas[data_entrega], DAY)
+// )
+
+// CORRIGIDA: usa a coluna dias_de_atraso da camada final, que só existe para
+// pedidos entregues com as duas datas conhecidas. Adiantamentos entram como valor negativo.
+Atraso Médio de Entrega =
+AVERAGE(fVendas[dias_de_atraso])
+
+// Complemento: percentual de pedidos que chegaram depois do prometido.
+% Pedidos Atrasados =
+DIVIDE(
+    CALCULATE(COUNTROWS(fVendas), fVendas[dias_de_atraso] > 0),
+    CALCULATE(COUNTROWS(fVendas), NOT ISBLANK(fVendas[dias_de_atraso]))
+)
+
+
+// ---------------------------------------------------------------------
+// 5. TICKET MÉDIO POR CLIENTE
+// ---------------------------------------------------------------------
+
+// ORIGINAL: a fórmula estava certa, mas herdava a receita com pedidos cancelados e devolvidos.
+// Ticket Médio por Cliente = DIVIDE([Receita Líquida], DISTINCTCOUNT(fVendas[cliente_id]))
+
+// CORRIGIDA: mesma fórmula, contando só os clientes com pedido entregue.
+Ticket Médio por Cliente =
+DIVIDE(
+    [Receita Líquida],
+    CALCULATE(DISTINCTCOUNT(fVendas[cliente_id]), fVendas[status_pedido] = "Entregue")
+)
